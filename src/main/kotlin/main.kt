@@ -1,47 +1,62 @@
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import java.io.File
-import java.io.FileNotFoundException
+import java.net.http.HttpRequest
+import kotlin.system.exitProcess
 
-fun getInstalledCliReleases(cliFiles: Array<File>): List<Float> {
-    return cliFiles.map {
-        it.name.removeSuffix(".jar")
-            .replace("alpha", "0")
-            .replace("beta", "1")
-            .replace("rc", "2")
-            .replace(".", "")
-            .replace("-", ",")
-            .toFloat()
+// TODO: test the comparator
+class SemVerComparator : Comparator<String> {
+    override fun compare(first: String?, second: String?): Int {
+        
     }
+}
+
+fun getLastVersionInstalledOrDownloadLastVersion(): String {
+    val cliDir = File("${System.getenv("HOME")}/icaro/cli")
+
+    if (cliDir.listFiles().isNotEmpty()) {
+        return cliDir.listFiles().map { it.name }.maxWith(SemVerComparator())
+    } else {
+        // get the last version
+        val lastVersion = ""
+        
+        // download the last version
+        
+        return lastVersion
+    }
+}
+
+fun downloadVersionIfPossible(cliVersion: String) {
+    try {
+        // if version exists, download the given version online and use it
+    } catch (e: Throwable) {
+        println("the cliVersion doesn't exist!")
+        exitProcess(1)
+    }
+
 }
 
 fun getCliVersion(): String {
     try {
-        if (!File("icarodeps.json").isFile)
-            throw FileNotFoundException()
+        if (!File("deps.json").isFile)
+            return getLastVersionInstalledOrDownloadLastVersion()
 
-        val dependencies = Gson().fromJson(File("icarodeps.json").readText(), Map::class.java)
+        val dependencies = Gson().fromJson(File("deps.json").readText(), Map::class.java)
 
-        return dependencies["cliVersion"].toString()
+        val cliVersion = dependencies["cliVersion"].toString()
+
+        if (!File("${System.getenv("HOME")}/icaro/cli/$cliVersion").isFile)
+            downloadVersionIfPossible(cliVersion)
+
+        return cliVersion
     } catch (e: JsonSyntaxException) {
-        println("the icarodeps.json file is malformed!")
-    } catch (e: FileNotFoundException) {
-        val cliDir = File("${System.getenv("HOME")}/icaro/cli")
-
-        if (cliDir.listFiles().isNotEmpty()) {
-            return getInstalledCliReleases(cliDir.listFiles()).maxOf { it }.toString()
-        } else {
-            //return last tag
-        }
+        println("deps.json (the icaro dependencies file) is malformed!")
+        exitProcess(1)
     }
 }
 
 fun main(args: Array<String>) {
     val cliPath = "${System.getenv("HOME")}/icaro/cli/${getCliVersion()}.jar"
-
-    if (!File(cliPath).isFile) {
-
-    }
 
     val cliProcess = ProcessBuilder(listOf("java", "-jar", cliPath) + args).start()
 
