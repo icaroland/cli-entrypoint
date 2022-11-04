@@ -1,13 +1,31 @@
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import java.io.File
-import java.net.http.HttpRequest
 import kotlin.system.exitProcess
 
-// TODO: test the comparator
 class SemVerComparator : Comparator<String> {
-    override fun compare(first: String?, second: String?): Int {
+    private fun getVersionAsList(release: String): List<String> {
+        var (major, minor, patch, preReleaseType, preReleaseNumber) = "(\\d).(\\d).?(\\d)?-?(\\w*).?(\\d)?".toRegex()
+            .find(release)!!
+            .destructured.toList()
+
+        if (patch == "") patch = "0"
+        if (preReleaseType == "") preReleaseType = "zeta"
+        if (preReleaseNumber == "") preReleaseNumber = "0"
+
+        return listOf(major, minor, patch, preReleaseType, preReleaseNumber)
+    }
+
+    override fun compare(o1: String, o2: String): Int {
+        for ((versionPiece1, versionPiece2) in getVersionAsList(o1).zip(getVersionAsList(o2))) {
+            if (versionPiece1 < versionPiece2)
+                return -1
+
+            if (versionPiece1 > versionPiece2)
+                return 1
+        }
         
+        return 0
     }
 }
 
@@ -19,48 +37,52 @@ fun getLastVersionInstalledOrDownloadLastVersion(): String {
     } else {
         // get the last version
         val lastVersion = ""
-        
+
         // download the last version
-        
+
         return lastVersion
     }
 }
 
-fun downloadVersionIfPossible(cliVersion: String) {
+fun downloadAndGetVersionIfPossible(cliVersion: String): String {
     try {
         // if version exists, download the given version online and use it
     } catch (e: Throwable) {
         println("the cliVersion doesn't exist!")
-        exitProcess(1)
+        throw e
     }
 
 }
 
 fun getCliVersion(): String {
     try {
-        if (!File("deps.json").isFile)
-            return getLastVersionInstalledOrDownloadLastVersion()
+        if (!File("deps.json").isFile) return getLastVersionInstalledOrDownloadLastVersion()
 
         val dependencies = Gson().fromJson(File("deps.json").readText(), Map::class.java)
 
         val cliVersion = dependencies["cliVersion"].toString()
 
-        if (!File("${System.getenv("HOME")}/icaro/cli/$cliVersion").isFile)
-            downloadVersionIfPossible(cliVersion)
+        if (!File("${System.getenv("HOME")}/icaro/cli/$cliVersion").isFile) return downloadAndGetVersionIfPossible(
+            cliVersion
+        )
 
         return cliVersion
     } catch (e: JsonSyntaxException) {
         println("deps.json (the icaro dependencies file) is malformed!")
-        exitProcess(1)
+        throw e
     }
 }
 
 fun main(args: Array<String>) {
-    val cliPath = "${System.getenv("HOME")}/icaro/cli/${getCliVersion()}.jar"
+    try {
+        val cliPath = "${System.getenv("HOME")}/icaro/cli/${getCliVersion()}.jar"
 
-    val cliProcess = ProcessBuilder(listOf("java", "-jar", cliPath) + args).start()
+        val cliProcess = ProcessBuilder(listOf("java", "-jar", cliPath) + args).start()
 
-    val cliOutput = String(cliProcess.inputStream.readAllBytes()) + String(cliProcess.errorStream.readAllBytes())
+        val cliOutput = String(cliProcess.inputStream.readAllBytes()) + String(cliProcess.errorStream.readAllBytes())
 
-    println(cliOutput)
+        println(cliOutput)
+    } catch (e: Throwable) {
+        exitProcess(1)
+    }
 }
