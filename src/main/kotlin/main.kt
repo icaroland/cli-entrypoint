@@ -3,7 +3,7 @@ import java.io.File
 import kotlin.system.exitProcess
 
 class SemVerComparator : Comparator<String> {
-    private fun getVersionAsList(release: String): List<String> {
+    private fun versionAsList(release: String): List<String> {
         var (major, minor, patch, preReleaseType, preReleaseNumber) = "(\\d).(\\d).?(\\d)?-?(\\w*).?(\\d)?".toRegex()
             .find(release)!!.destructured.toList()
 
@@ -15,7 +15,7 @@ class SemVerComparator : Comparator<String> {
     }
 
     override fun compare(o1: String, o2: String): Int {
-        for ((currentNumberO1, currentNumberO2) in getVersionAsList(o1).zip(getVersionAsList(o2))) {
+        for ((currentNumberO1, currentNumberO2) in versionAsList(o1).zip(versionAsList(o2))) {
             if (currentNumberO1 < currentNumberO2) return -1
 
             if (currentNumberO1 > currentNumberO2) return 1
@@ -25,11 +25,11 @@ class SemVerComparator : Comparator<String> {
     }
 }
 
-fun getLastVersionInstalled(): String =
+fun lastVersionInstalled(): String =
     File("$ICARO_HOME/cli/core").listFiles().map { it.name }.maxWith(SemVerComparator()) 
 
-fun getCliVersion(): String {
-    if (!File("deps.json").isFile) return getLastVersionInstalled()
+fun cliVersion(): String {
+    if (!File("deps.json").isFile) return lastVersionInstalled()
 
     val dependencies = Gson().fromJson(File("deps.json").readText(), Map::class.java)
 
@@ -38,7 +38,7 @@ fun getCliVersion(): String {
 
 fun main(args: Array<String>) {
     try {
-        val cliPath = "$ICARO_HOME/cli/core/${getCliVersion()}.jar"
+        val cliPath = "$ICARO_HOME/cli/core/${cliVersion()}.jar"
 
         val cliProcess = ProcessBuilder(listOf("java", "-jar", cliPath) + args).start()
 
