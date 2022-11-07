@@ -1,5 +1,7 @@
 import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import java.io.File
+import java.io.IOException
 import kotlin.system.exitProcess
 
 class SemVerComparator : Comparator<String> {
@@ -26,7 +28,7 @@ class SemVerComparator : Comparator<String> {
 }
 
 fun lastVersionInstalled(): String =
-    File("$ICARO_HOME/cli/core").listFiles().map { it.name }.maxWith(SemVerComparator()) 
+    File("$ICARO_HOME/cli/core").listFiles()!!.map { it.name }.maxWith(SemVerComparator()) 
 
 fun cliVersion(): String {
     if (!File("deps.json").isFile) return lastVersionInstalled()
@@ -45,7 +47,8 @@ fun main(args: Array<String>) {
         val cliOutput = String(cliProcess.inputStream.readAllBytes()) + String(cliProcess.errorStream.readAllBytes())
 
         println(cliOutput)
-    } catch (e: Throwable) {
+    } catch (e: JsonSyntaxException) {
+        println("deps.json file doesn't contain valid JSON!")
         exitProcess(1)
     }
 }
