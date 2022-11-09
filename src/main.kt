@@ -1,12 +1,14 @@
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import java.io.File
-import java.io.IOException
+import java.io.FileNotFoundException
 import kotlin.system.exitProcess
 
 class SemVerComparator : Comparator<String> {
     private fun versionAsList(release: String): List<String> {
-        var (major, minor, patch, preReleaseType, preReleaseNumber) = "(\\d).(\\d).?(\\d)?-?(\\w*).?(\\d)?".toRegex()
+        if (!Regex("\\d.\\d(.\\d)?(-\\w*.\\d)?").matches(release)) throw IllegalArgumentException()
+
+        var (major, minor, patch, preReleaseType, preReleaseNumber) = Regex("(\\d).(\\d).?(\\d)?-?(\\w*).?(\\d)?")
             .find(release)!!.destructured.toList()
 
         if (patch == "") patch = "0"
@@ -27,20 +29,24 @@ class SemVerComparator : Comparator<String> {
     }
 }
 
-fun lastVersionInstalled(): String =
-    File("$ICARO_HOME/cli/core").listFiles()!!.map { it.name }.maxWith(SemVerComparator()) 
+fun lastVersionInstalled(): String {
+    if (File("$ICARO_HOME/cli/core").listFiles()?.isEmpty() == true)
+        throw FileNotFoundException()
 
-fun cliVersion(): String {
-    if (!File("deps.json").isFile) return lastVersionInstalled()
+    return File("$ICARO_HOME/cli/core").listFiles()!!.map { it.name }.maxWith(SemVerComparator())
+}
 
-    val dependencies = Gson().fromJson(File("deps.json").readText(), Map::class.java)
+fun cliVersionToUse(): String {
+    if (!File("$DEPS_FILE_NAME.json").isFile) return lastVersionInstalled()
 
-    return dependencies["cliVersion"].toString()
+    val dependencies = Gson().fromJson(File("$DEPS_FILE_NAME.json").readText(), Map::class.java)
+
+    return dependencies[CLI_VERSION_DEPS_ATTRIBUTE_NAME].toString()
 }
 
 fun main(args: Array<String>) {
     try {
-        val cliPath = "$ICARO_HOME/cli/core/${cliVersion()}.jar"
+        val cliPath = "$ICARO_HOME/cli/core/${cliVersionToUse()}.jar"
 
         val cliProcess = ProcessBuilder(listOf("java", "-jar", cliPath) + args).start()
 
@@ -49,6 +55,11 @@ fun main(args: Array<String>) {
         println(cliOutput)
     } catch (e: JsonSyntaxException) {
         println("deps.json file doesn't contain valid JSON!")
+    } catch (e: IllegalArgumentException) {
+        println("at least one of your cli version installed is corrupted. (Re)Install Icaro!")
+    } catch (e: FileNotFoundException) {
+        println("no cli versions are installed!")
+    } catch (e: Throwable) {
         exitProcess(1)
     }
 }
