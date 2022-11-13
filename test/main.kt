@@ -48,6 +48,7 @@ class LastVersionInstalledTest {
 
     @Test
     fun shouldThrowBecauseBadCliReleaseWereFoundInstalled() {
+        println(CLI_CORE_DIR_PATH)
         File(CLI_CORE_DIR_PATH).mkdirs()
         File("$CLI_CORE_DIR_PATH/0.1.1.0.jar").createNewFile()
 
