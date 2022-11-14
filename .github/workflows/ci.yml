@@ -10,4 +10,4 @@ jobs:
         ICARO_HOME: /home/dilbert/icaro
     steps:
       - name: tests
-        run: pwd
+        run: ls -a
