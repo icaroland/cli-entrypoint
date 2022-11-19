@@ -7,11 +7,7 @@ fun main(args: Array<String>) {
     try {
         val cliPath = "$CLI_CORE_DIR_PATH/${cliVersionToUse()}.jar"
 
-        val cliProcess = ProcessBuilder(listOf("java", "-jar", cliPath) + args).start()
-
-        val cliOutput = String(cliProcess.inputStream.readAllBytes()) + String(cliProcess.errorStream.readAllBytes())
-
-        println(cliOutput)
+        ProcessBuilder(listOf("java", "-jar", cliPath) + args).inheritIO().start()
     } catch (e: Throwable) {
         println(e.message)
     }
