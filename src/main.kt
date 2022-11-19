@@ -5,9 +5,9 @@ import java.io.FileNotFoundException
 
 fun main(args: Array<String>) {
     try {
-        val cliPath = "$CLI_CORE_DIR_PATH/${cliVersionToUse()}.jar"
+        val path = "$CLI_CORE_DIR_PATH/${cliVersionToUse()}.jar"
 
-        ProcessBuilder(listOf("java", "-jar", cliPath) + args).inheritIO().start()
+        ProcessBuilder(listOf("java", "-jar", path) + args).inheritIO().start().waitFor()
     } catch (e: Throwable) {
         println(e.message)
     }
