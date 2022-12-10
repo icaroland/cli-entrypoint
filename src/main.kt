@@ -29,7 +29,7 @@ fun cliVersionToUse(): String {
 @Throws(FileNotFoundException::class, IllegalArgumentException::class)
 fun lastVersionInstalled(): String {
     if (File(CLI_CORE_DIR_PATH).listFiles()?.isEmpty() != false)
-        throw FileNotFoundException("no cli versions are installed!")
+        throw FileNotFoundException("no cli versions are installed in $CLI_CORE_DIR_PATH!")
 
     val cliVersions: List<String> = File(CLI_CORE_DIR_PATH).listFiles()!!.map { it.name.removeSuffix(".jar") }
 
