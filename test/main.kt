@@ -1,17 +1,11 @@
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonSyntaxException
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.io.File
 import java.io.FileNotFoundException
 
-class CliVersionToUseTest {
-    @AfterEach
-    fun deleteDepsFile() {
-        File("$DEPS_FILE_NAME.json").delete()
-    }
-
+class CliVersionToUseTest : AutoRemover() {
     @Test
     fun shouldReturnTheCliVersionWrittenOnDependenciesFile() {
         val cliVersion = "0.1"
@@ -36,11 +30,6 @@ class CliVersionToUseTest {
 }
 
 class LastVersionInstalledTest {
-    @AfterEach
-    fun deleteFiles() {
-        File(CLI_CORE_DIR_PATH).deleteRecursively()
-    }
-
     @Test
     fun shouldThrowBecauseNoCliWereFoundInstalled() {
         assertThrows<FileNotFoundException> { lastVersionInstalled() }
